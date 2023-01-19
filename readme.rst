@@ -1,48 +1,40 @@
-8位RISC CPU的Verilog实现
+8-bit RISC Verilog implementation of CPU
 ========================
 
 
-一. 设计需求
+1. Design requirements
 ------------
 
-当今绝大多数计算机，无论是大型机还是微型机其基本结构都是冯诺依曼体系结构，即计算机由控制器，运算器，存储器，和输入/输出设备五部分组成。指令和程序都是存储在存储器中。
+The basic structure of the vast majority of computers today, whether they are mainframes or microcomputers, is the Von Neumann architecture, that is, the computer consists of five parts: controller, arithmetic unit, memory, and input/output devices. Both instructions and programs are stored in memory.
 
 |image0|
 
-中央处理器，也称微处理器（microprocessor），是计算机系统的核心。主要完成以下任务：（1）从存储器中取指令，指令译码；（2）执行简单的算数逻辑运算；（3）在处理器和存储器或I/O之间传送数据；（4）程序流向控制等[1]。
+The central processing unit, also known as the microprocessor , is the core of the computer system. Mainly complete the following tasks: (1) Fetch instructions from memory and decode instructions; (2) Perform simple arithmetic and logic operations; (3) Transfer data between processor and memory or I/O; (4) Program flow direction control etc. [1].
 
-RISC，reduced instruction set
-computer，精简指令集计算机相较于CISC，complex instruction set
-computer，复杂指令集计算机能够在一个始终周期执行更多的指令，这些指令比CISC的指令集具有更短，功能更简单，指令格式更统一等特点，因此适合流水线处理，加快处理速度。
+RISC, reduced instruction set
+computer, reduced instruction set computer compared to CISC, complex instruction set
+Computer, a complex instruction set computer can execute more instructions in one cycle. These instructions are shorter, simpler in function, and more uniform in instruction format than CISC instruction sets, so they are suitable for pipeline processing and speed up processing.
 
-8位CPU是上世纪70年代开始采用的典型CPU结构，代表产品有因特尔的8080系列[1]。是现代普遍采用的64位，32位总线结构CPU的起始。
+The 8-bit CPU is a typical CPU structure adopted in the 1970s, and the representative products include Intel's 8080 series [1]. It is the beginning of the 64-bit and 32-bit bus structure CPU commonly used in modern times.
 
-本文将基于有限状态机（Finite State Machine,
-FSM）采用Verilog硬件描述语言对8位RISC架构CPU进行实现。
+This paper will be based on the finite state machine (FSM) adopts Verilog hardware description language to implement 8-bit RISC architecture CPU.
 
-二. 硬件组成
+2. Hardware composition
 ------------
 
 |image1|
 
-如图是微型计算机系统中关键组成部分，包含CPU，存储器，数据和地址总线。CPU主要由算数逻辑单元（ALU，Arithmetic
-Logic
-Unit），累加器（accumulator），通用寄存器（registers），程序计数器（PC，Program
-Counter），指令寄存器（IR，Instruction Register），地址选择器（address
-multiplexer）组成。存储器这里指主存储器，分为随机存取存储器RAM（Radom
-Access Memory）和只读存储器ROM（Read Only
-Memory）。主存和CPU之间通过总线访问，总线有地址总线（Address
-Bus）和数据总线（Data Address）两种。
+As shown in the figure, it is a key component of a microcomputer system, including CPU, memory, data and address buses. CPU is mainly composed of arithmetic logic unit (ALU), accumulator, general registers, program counter (PC), instruction register (IR), address multiplexer. The memory here refers to the main memory, which is divided into random access memory RAM and read-only memory ROM. The main memory and the CPU are accessed through the bus. The bus has two types: address bus (Address Bus) and data bus (Data Address).
 
-2.1 存储器
+2.1 Memory
 ~~~~~~~~~~
 
 2.1.1 ROM
 ^^^^^^^^^
 
-ROM用于存储要执行的指令，关于指令的介绍见第三章。
+ROM is used to store the instructions to be executed, see Chapter 3 for the introduction of instructions.
 
-Verilog实现：
+Verilog implementation ：
 
 .. code:: verilog
 
@@ -64,18 +56,18 @@ Verilog实现：
 
    endmodule
 
-ROM，只读指令。接受输入地址，当读信号和使能信号高电平时输出对应地址存储的指令，否则输出保持高阻态。地址和数据都是8位，可寻址以及内部存储的大小为256Bytes。
+ROM, read-only instructions. Accept the input address, when the read signal and enable signal are high level, output the instruction corresponding to the address storage, otherwise the output remains in a high-impedance state. Both address and data are 8 bits, addressable and the size of internal storage is 256Bytes。
 
 |image2|
 
-RTL（register-transfer level，寄存器传输级）综合如上图所示。
+RTL (register-transfer level) synthesis is shown in the figure above.
 
 2.2.2 RAM
 ^^^^^^^^^
 
-存储数据，可读可写。
+Store data, readable and writable.
 
-Verilog实现：
+Verilog implementation:
 
 .. code:: verilog
 
@@ -93,11 +85,11 @@ Verilog实现：
    end
    endmodule
 
-可读可写，接收8位地址，当读信号和使能信号有效时，输出对应地址存储的数据，否则输出保持高阻态。当写信号上升沿是触发，将输入输出写入地址对应位置。内部存储以及可循址大小也为256Byters。
+Readable and writable, receiving an 8-bit address, when the read signal and enable signal are valid, output the data stored in the corresponding address, otherwise the output remains in a high-impedance state. When the rising edge of the write signal is triggered, the input and output are written to the corresponding position of the address. The internal storage and addressable size are also 256Byters.
 
 |image3|
 
-RTL视图如上。
+The RTL view is as above.
 
 2.2 CPU
 ~~~~~~~
@@ -105,11 +97,9 @@ RTL视图如上。
 2.2.1 PC
 ^^^^^^^^
 
-程序计数器，有时也叫做指令地址寄存器（Instruction Address Register,
-IAR），对应于Intel X86体系CPU中的指令指针（Instruction
-pointer）寄存器。其功能是用来存放要执行的下一条指令在现行代码段中的偏移地址。本文中PC由Controller自动修改，使得其中始终存放着下一条将要执行指令的地址。因此，PC是用来控制指令序列执行流程的寄存器[2]。
+The program counter, sometimes called the instruction address register (IAR), corresponds to the instruction pointer register in the Intel X86 system CPU. Its function is to store the offset address of the next instruction to be executed in the current code segment. In this paper, the PC is automatically modified by the Controller, so that the address of the next instruction to be executed is always stored in it. Therefore, PC is a register used to control the execution flow of instruction sequences [2].
 
-Verilog实现：
+Verilog implementation:
 
 .. code:: verilog
 
@@ -126,18 +116,17 @@ Verilog实现：
    end
    endmodule
 
-异步清零。时钟上升沿触发，高电平使能时程序计数器计数，指向下一条要执行指令的地址。指令存储在ROM中，故每次pc_addr加1。
-
+Cleared asynchronously. Triggered by the rising edge of the clock, the program counter counts when the high level is enabled, and points to the address of the next instruction to be executed. Instructions are stored in ROM, so pc_addr is incremented by 1 each time.
 |image4|
 
-RTL视图如上。
+The RTL view is as above.
 
-2.2.2 累加器
+2.2.2 Accumulator
 ^^^^^^^^^^^^
 
-累加器，用于储存计算的中间结果。
+Accumulators are used to store intermediate results of calculations.
 
-Verilog实现：
+Verilog implementation :
 
 .. code:: verilog
 
@@ -157,18 +146,18 @@ Verilog实现：
    end
    endmodule
 
-异步清零。时钟上升沿触发，高电平使能时输出当前输入信号。
+Cleared asynchronously. Triggered by the rising edge of the clock, the current input signal is output when the high level is enabled.
 
 |image5|
 
-RTL视图如上，可以看出其是一个Q触发器来实现。
+RTL as shown above, it can be seen that it is realized by a Q flip-flop.
 
-2.2.3 地址选择器
+2.2.3 Address Multiplexer
 ^^^^^^^^^^^^^^^^
 
-接受控制使能信号对输入的来自程序计数器和指令寄存器的地址进行选择。
+Accepting the control enable signal selects the input address from the program counter and instruction register.
 
-Verilog实现：
+Verilog implementation : 
 
 .. code:: verilog
 
@@ -181,16 +170,16 @@ Verilog实现：
    assign addr = (sel)? ir_ad:pc_ad;
    endmodule
 
-当选择信号为1时，选择来自寄存器输入的地址到数据总线，否则将程序计数器中的地址加载到数据总线。
+When the select signal is 1, the address from the register input is selected to the data bus, otherwise the address in the program counter is loaded to the data bus.
 
 |image6|
 
-RTL视图如上。
+RTL view as above.
 
 2.2.4 ALU
 ^^^^^^^^^
 
-算术逻辑运算单元，根据指令类型来决定进行哪种运算，从而将运算结果输出通用寄存器或者累加器中。
+The arithmetic and logic operation unit determines which operation to perform according to the instruction type, so as to output the operation result to the general-purpose register or the accumulator.
 
 .. code:: verilog
 
@@ -227,14 +216,14 @@ RTL视图如上。
 
 |image7|
 
-RTL视图如上。
+The RTL view is as above.
 
-2.2.5 通用寄存器
-^^^^^^^^^^^^^^^^
+2.2.5 General purpose registers
+^^^^^^^^^^^^^^^^^
 
-通用寄存器，ALU输出结果，指令寄存器输出的操作数都可以存储到寄存器中的特定的地址。输出寄存器中存储的数据到数据总线。
+General-purpose registers, ALU output results, and operands output by instruction registers can all be stored at specific addresses in registers. Output the data stored in the register to the data bus.
 
-Verilog实现：
+Verilog implementation:
 
 .. code:: verilog
 
@@ -258,18 +247,18 @@ Verilog实现：
    end
    endmodule
 
-当写信号有效时，将输入数据（来自ALU的输出）存储到寄存器中的特定地址。当读信号有效时，将寄存器中特定位置的数据输出（到数据总线）。寄存器大小为32Bytes。
+When the write signal is asserted, the input data (output from the ALU) is stored to a specific address in the register. When the read signal is active, the data at the specified location in the register is output (to the data bus). The register size is 32Bytes.
 
 |image8|
 
-RTL视图如上。
+The RTL view is as above.
 
 2.2.6 IR
-^^^^^^^^
+^^^^^^^^^
 
-指令寄存器，从数据总线上获取数据，根据输入控制信号，根据指令类型将特定指令和地址输出到ALU，通用寄存器和地址选择器。
+Instruction register, which takes data from the data bus, outputs specific instructions and addresses to the ALU, general-purpose registers, and address selectors according to the type of instruction according to the input control signal.
 
-verilog实现:
+verilog implementation :
 
 .. code:: verilog
 
@@ -311,20 +300,20 @@ verilog实现:
    end
    endmodule
 
-异步清零。当输入控制信号为\ ``01``\ 时表示数据总线当前为指令（形式为指令编码+寄存器地址，见第三章），将其从\ ``ins``\ 和\ ``ad1``\ 输出，当控制信号为\ ``10``\ 时，表示当前数据总线上的为数据（8位地址数据，见第三章），将其从\ ``ad2``\ 输出到地址选择器。
+Cleared asynchronously. When the input control signal is \ ``01``\, it means that the data bus is currently an instruction (in the form of instruction code + register address, see Chapter 3), and it is changed from \ ``ins``\ and \ ``ad1` `\ Output, when the control signal is \ ``10``\, it means that the data on the current data bus is data (8-bit address data, see Chapter 3), output it from \ ``ad2``\ to the address Selector.
 
 |image9|
 
-RTL视图如上。
+The RTL view is as above.
 
-2.3 内部结构（总）
+2.3 Internal structure (total)
 ~~~~~~~~~~~~~~~~~~
 
 |image10|
 
-如图是系统内部结构原理图，显示了各个部件之间的连接关系，数据总线和地址总线是总线系统的核心。其中地址总线连接了地址选择器的输出，ROM以及RAM的输入端。地址总线和ROM/RAM的输出，IR和ALU的输入，以及通用寄存器的输出相连。控制器controller（图左上方）是系统的控制单元，相关细节见第四章。
+The figure is a schematic diagram of the internal structure of the system, which shows the connection relationship between various components. The data bus and address bus are the core of the bus system. The address bus connects the output of the address selector, the input of the ROM and the RAM. The address bus is connected to the output of the ROM/RAM, the input of the IR to the ALU, and the output of the general register. The controller (upper left in the figure) is the control unit of the system, see Chapter 4 for details.
 
-整个硬件系统使用元件例化语句的Verilog描述如下：
+The Verilog description of the entire hardware system using component instantiation statements is as follows:
 
 .. code:: verilog
 
@@ -414,20 +403,20 @@ RTL视图如上。
 
 |image11|
 
-各个模块进行例化后的系统总体RTL视图如上。
+The overall RTL view of the system after instantiation of each module is as above.
 
-三. 指令集
+3. Instruction set
 ----------
 
-我们定义的RISC指令集长度类型两种，分别为短指令和长指令：
+We define two types of RISC instruction set lengths, namely short instructions and long instructions:
 
 |image12|
 
 |image13|
 
-其中指令编码采用三位二进制表示，共定义有8种指令。短指令共8位，高三位为指令编码，低五位为通用寄存器地址。长指令为16位，每个长指令分两次取，每次取8位，首先取高8位，格式和短指令相通，也是高3位为指令编码，低5位为通用寄存器地址；第二次取低8位，表示ROM或者RAM地址，取决于指令编码。
+Among them, the instruction code adopts three-bit binary representation, and there are 8 kinds of instructions defined. The short instruction has 8 bits in total, the upper three bits are the instruction code, and the lower five bits are the address of the general register. The long instruction is 16 bits, and each long instruction is fetched twice, 8 bits are fetched each time, the high 8 bits are fetched first, the format is the same as the short instruction, and the high 3 bits are the instruction code, and the low 5 bits are the general register address; The lower 8 bits are fetched twice to indicate the ROM or RAM address, depending on the instruction code.
 
-因此有指令集如下表所示，为了方便理解指令的缩写含义，表中用英文进行了描述并将缩写的由来使用加粗来表示：
+Therefore, the instruction set is shown in the following table. In order to facilitate the understanding of the abbreviated meaning of the instruction, the table is described in English and the origin of the abbreviation is expressed in bold:
 
 +---+---+---------------------------------------+---+---------------------+
 | I | B | Description                           | T | Comment             |
@@ -437,7 +426,7 @@ RTL视图如上。
 |   | r |                                       |   |                     |
 |   | y |                                       |   |                     |
 +===+===+=======================================+===+=====================+
-| N | 0 | **N**\ o **op**\ eration              | S | 空操作              |
+| N | 0 | **N**\ o **op**\ eration              | S | No Operation        |
 | O | 0 |                                       | h |                     |
 | P | 0 |                                       | o |                     |
 |   |   |                                       | r |                     |
@@ -476,45 +465,45 @@ RTL视图如上。
 |   |   |                                       | r |                     |
 |   |   |                                       | t |                     |
 +---+---+---------------------------------------+---+---------------------+
-| H | 1 | **H**\ a\ **lt**                      | S | 停机指令            |
+| H | 1 | **H**\ a\ **lt**                      | S | Halt                |
 | L | 1 |                                       | h |                     |
 | T | 1 |                                       | o |                     |
 |   |   |                                       | r |                     |
 |   |   |                                       | t |                     |
 +---+---+---------------------------------------+---+---------------------+
 
-四. 控制器
+4. Controller
 ----------
 
-控制器是系统的核心，具有以下功能：取指令，指令排队，读写操作数，总线控制等。这里采用（Mealy型）有限状态机（FSM）来实现控制器，指令存储在ROM中来执行，控制器接受外界时钟和复位信号，控制器根据当前状态以及输入进行状态的转移。
+The controller is the core of the system and has the following functions: fetching instructions, queuing instructions, reading and writing operands, bus control, etc. Here, the (Mealy type) finite state machine (FSM) is used to realize the controller, and the instructions are stored in the ROM for execution. The controller receives the external clock and reset signal, and the controller performs state transfer according to the current state and input.
 
-4.1 状态转移图
+4.1 State transition diagram
 ~~~~~~~~~~~~~~
 
 |image14|
 
-根据指令的任务，我们设计了如上图所示的状态转移图，从左至右依次为状态Sidle，S0~S12。各个状态的含义如下：
+According to the task of the instruction, we designed the state transition diagram as shown in the figure above, from left to right are states Sidle, S0~S12. The meaning of each status is as follows:
 
 ============ ============== ===================================
 Source State Description    Comment
 ============ ============== ===================================
-S0           Load ir1       取指令1（短指令或者长指令的第一个）
-S1           PC+1           每执行一条PC+1
-S2           HLT            停机
-S3           Load ir2       取指令2
-S4           PC+1           每执行一条PC+1
+S0           Load ir1       Fetch instruction 1 (the first short instruction or long instruction)
+S1           PC+1           Each execution of a PC+1
+S2           HLT            Halt
+S3           Load ir2       Fetch instruction 2
+S4           PC+1           Each execution of a PC+1
 S5           ROM/RAM to REG LDA/LDO
-S6           Protect        写保护
-S7           Read REG       STO第1阶段
-S8           Write RAM      STO第2阶段
-S9           Read REG       PRE/ADD，第1阶段
-S10          Write ACCUM    PRE/ADD，第2阶段
+S6           Protect        Write protection
+S7           Read REG       STO phase No.1
+S8           Write RAM      STO phase No.2
+S9           Read REG       PRE/ADD，phase No.1
+S10          Write ACCUM    PRE/ADD，phase No.2
 S11          Write REG      LDM
 S12          Protect        LDM
-Sidle        Reset          重启
+Sidle        Reset          Reboot
 ============ ============== ===================================
 
-各个状态之间的转移有：
+The transitions between states are:
 
 ===== == == == == == == == == == == === === === =====
 \     S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 Sidle
@@ -584,22 +573,22 @@ Sidle 0  0  0  0  0  0  0  0  0  0  0   0   0   0
 | Sidle  | S0         |                                               |
 +--------+------------+-----------------------------------------------+
 
-例如我们可以看到S0，S1的状态转移：
+For example, we can see the state transition of S0 and S1:
 
 |image15|
 
 |image16|
 
-详情请见附件\ ``fsm.pdf``\ 。
+Please see the attachment \ ``fsm.pdf``\ for details.
 
-关于图示有限状态机的verilog实现，这里采用了经典的3段式结构：状态寄存器（state
-register），下一个状态组合逻辑电路（Next-state combinational
-logic），输出组合逻辑电路（Output combinational logic）。
+Regarding the verilog implementation of the illustrated finite state machine, a classic 3-segment structure is used here: state register (state
+register), the next state combinational logic circuit (Next-state combinational
+logic), output combinational logic circuit (Output combinational logic).
 
-4.2 FSM之状态寄存器
-~~~~~~~~~~~~~~~~~~~
+4.2 Status Register of FSM
+~~~~~~~~~~~~~~~~~~~~
 
-本质是一个D触发器，负责将下一个状态赋给当前状态值（即跳转到下一个状态），异步清零。
+The essence is a D flip-flop, which is responsible for assigning the next state to the current state value (that is, jumping to the next state), and clearing it asynchronously.
 
 .. code:: verilog
 
@@ -612,10 +601,10 @@ logic），输出组合逻辑电路（Output combinational logic）。
            //current_state <= next_state;  
    end
 
-4.3 FSM之下一个状态组合逻辑
+4.3 Combination logic of a state under FSM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-负责控制状态的转移，这里下一个状态跟当前状态\ ``state``\ 以及输入\ ``ins``\ 均有关，属于Mealy型状态机。
+Responsible for the transfer of the control state, where the next state is related to the current state \ ``state``\ and the input \ ``ins``\, which belongs to the Mealy type state machine.
 
 .. code:: verilog
 
@@ -652,22 +641,22 @@ logic），输出组合逻辑电路（Output combinational logic）。
    endcase
    end
 
-4.4 FSM之输出组合逻辑
-~~~~~~~~~~~~~~~~~~~~~
+4.4 Output combinatorial logic of FSM
+~~~~~~~~~~~~~~~~~~~~~~
 
-输出组合逻辑电路根据当前状态以及输入命令，来确定输出值。
+The output combinational logic circuit determines the output value according to the current state and the input command.
 
-由于篇幅较长，见附录。
+Due to the length of the paper, see the appendix.
 
-五. 测试及结果
+5. Test and Results
 --------------
 
-为了验证RISC CPU功能的正确与否，下面进行芯片进行测试。
+In order to verify whether the RISC CPU function is correct or not, the chip is tested below.
 
-5.1 测试指令
+5.1 Test Instructions
 ~~~~~~~~~~~~
 
-ROM中存储的指令如下：
+The instructions stored in ROM are as follows：
 
 .. code:: verilog
 
@@ -704,12 +693,12 @@ ROM中存储的指令如下：
        memory[67] = 8'b001_10101;  //53
    end
 
-指令按照顺序执行，最终的结果是将ROM中的65，66，67位的三个数进行加法，存储到RAM[2]中，即实现三个数的加法，于此同时RAM[1]存放着前两个数加法的和。
+The instructions are executed in order, and the final result is to add the three numbers of 65, 66, and 67 bits in the ROM and store them in RAM[2], that is, to realize the addition of the three numbers, and at the same time, RAM[1] stores The sum of the addition of the first two numbers.
 
 5.2 Test-Bench
 ~~~~~~~~~~~~~~
 
-为了测试系统的功能，这里生成/编写test-bench文件，用于仿真：
+In order to test the function of the system, generate/write the test-bench file here for simulation:
 
 .. code:: verilog
 
@@ -758,41 +747,41 @@ ROM中存储的指令如下：
    #20000 $stop;
    endmodule
 
-只需要给CPU两个信号，激励时钟\ ``clk``\ 和异步复位信号\ ``rst``\ 。
+Only two signals need to be given to the CPU, the excitation clock \ ``clk``\ and the asynchronous reset signal \ ``rst``\.
 
-5.3 波形
+5.3 Waveform
 ~~~~~~~~
 
 |image17|
 
-根据ModelSIM仿真结果，如上图所示累加器输出最终结果179，在最后的停机指令前（图中6300ps处），addr地址为2，data为179，ram写，使能信号均为1，将最终结果写入到了RAM[2]中，指令指令结果无误。
+According to the ModelSIM simulation results, as shown in the figure above, the accumulator outputs the final result of 179. Before the final shutdown command (at 6300ps in the figure), the addr address is 2, the data is 179, and the ram write and enable signals are all 1, which will eventually The result is written into RAM[2], and the instruction instruction result is correct.
 
-从仿真波形中，不仅可以看出每个控制信号在每个时刻的状态，还可以看出每条指令执行的状态机的状态转换信息：
+From the simulation waveform, not only the state of each control signal at each moment can be seen, but also the state transition information of the state machine executed by each instruction:
 
 |image18|
 
-如图所示，从波形可以看出执行一个LDO长指令消耗了6个时钟周期，NOP指令消耗了两个时钟周期，和状态转换图一致，得到的结果和测试指令的输出要求一致。
+As shown in the figure, it can be seen from the waveform that executing an LDO long instruction consumes 6 clock cycles, and the NOP instruction consumes two clock cycles, which is consistent with the state transition diagram, and the obtained result is consistent with the output requirements of the test command.
 
 |image19|
 
-如图是两个最重要的用来验证功能正确性的两个时刻，从波形可以看出，相应的计算结果126，179分别被写到了RAM的地址第1，2位置，相关控制信号正常。即达到了我们设计的功能。更多关于波形的情况，见附件即仿真源文件。
+The figure shows the two most important moments for verifying the correctness of the function. It can be seen from the waveform that the corresponding calculation results 126 and 179 are respectively written to the first and second positions of the RAM address, and the related control signals are normal. That is to achieve the function we designed. For more information about the waveform, see the attachment, the simulation source file.
 
-六. 结论
+6. Conclusion
 --------
 
-本文构建了8位的RISC
-CPU，详细介绍了设计过程和实验测试，包括：硬件组成，指令集系统等。重点在于控制器的设计，基于有限状态机，实现了指令和状态之间的对应和转移，并进行了详实的仿真实验，结果证明CPU功能正常，达到了预期。
+This article builds an 8-bit RISC
+CPU, introduces the design process and experimental test in detail, including: hardware composition, instruction set system, etc. The focus is on the design of the controller. Based on the finite state machine, the correspondence and transfer between instructions and states has been realized, and a detailed simulation experiment has been carried out. The results prove that the CPU functions normally and meets expectations.
 
-参考文献
+references
 --------
 
-[1]周荷琴, 吴秀清.
-微型计算机原理和接口技术（第三版）.中国科学技术大学出版社. 2008.
+[1] Zhou Heqin, Wu Xiuqing.
+Microcomputer Principles and Interface Technology (Third Edition). University of Science and Technology of China Press. 2008.
 
-附录
+appendix
 ----
 
-**附录A Controller的Verilog实现**
+**Appendix A Verilog Implementation of Controller**
 
 .. code:: verilog
 
